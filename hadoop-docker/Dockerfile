@@ -7,13 +7,14 @@ RUN yum update -y
 RUN yum install java-1.8.0-openjdk -y
 RUN yum install which -y
 RUN yum install vim -y
+RUN yum install openssh-server openssh-clients -y
 
 ENV JAVA_HOME /usr/lib/jvm/jre-1.8.0-openjdk
 ENV JRE_HOME /usr/lib/jvm/jre
 ENV CLASSPATH ${JAVA_HOME}/lib:${JRE_HOME}/lib
 ENV PATH ${PATH}:${JAVA_HOME}/bin
 ENV HADOOP_HOME /opt/lagou/servers/hadoop
-ENV PATH ${PATH}:${HADOOP_HOME}/bin
+ENV PATH ${PATH}:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
 
 RUN yum install wget -y
 
