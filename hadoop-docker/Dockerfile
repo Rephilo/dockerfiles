@@ -1,34 +1,34 @@
-FROM --platform=x86_64 centos:7
+MAINTAINER Rephilo
+FROM ubuntu:lunar
 
-ARG NAMENODE=172.17.0.2
-ARG DATANODE
-ARG RESOURCEMANAGER=172.17.0.4
+ENV NAMENODE=namenode
+ENV DATANODE=datanode
+ENV RESOURCEMANAGER=resourcemanager
 
 #创建文件夹
-RUN mkdir -p /opt/lagou/software
-RUN mkdir -p /opt/lagou/servers
+RUN mkdir -p /opt/hadoop
+#RUN mkdir -p /opt/servers
 
 #安装一些用到的包
-RUN yum update -y
-RUN yum install java-1.8.0-openjdk -y
-RUN yum install which -y
-RUN yum install vim -y
-RUN yum install openssh-server openssh-clients -y
+RUN apt update -y
+RUN apt install openjdk-8-jre -y
 
 #配置环境变量
-ENV JAVA_HOME /usr/lib/jvm/jre-1.8.0-openjdk
-ENV JRE_HOME /usr/lib/jvm/jre
+ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk-arm64/
+ENV JRE_HOME $JAVA_HOME/jre
 ENV CLASSPATH ${JAVA_HOME}/lib:${JRE_HOME}/lib
 ENV PATH ${PATH}:${JAVA_HOME}/bin
-ENV HADOOP_HOME /opt/lagou/servers/hadoop
+ENV HADOOP_HOME /opt/hadoop
 ENV PATH ${PATH}:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
 
-#下载Hadoop
-RUN yum install wget -y
+WORKDIR $HADOOP_HOME
 
-RUN wget https://dlcdn.apache.org/hadoop/common/hadoop-2.10.1/hadoop-2.10.1.tar.gz && \
-    tar -zxvf hadoop-2.10.1.tar.gz
-RUN mv hadoop-2.10.1 /opt/lagou/servers/hadoop
+#下载Hadoop
+RUN apt install wget -y
+
+RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.1/hadoop-3.3.1-aarch64.tar.gz && \
+    tar -zxf hadoop-3.3.1-aarch64.tar.gz -C $HADOOP_HOME && \
+    rm hadoop-3.3.1-aarch64.tar.gz
 
 #HDFS集群配置
 #配置hadoop-env.sh文件的JDK
@@ -60,4 +60,7 @@ RUN sed -i "/<configuration>/a<property><name>yarn.resourcemanager.hostname</nam
 RUN sed -i "/<configuration>/i<property><name>yarn.nodemanager.aux-services</name><value>mapreduce_shuffle</value></property>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
 
 #修改用户组
-RUN chown -R root:root /opt/lagou/servers/hadoop
+RUN chown -R root:root /opt/hadoop
+
+EXPOSE 9000
+ENTRYPOINT ["bin/docker-startup.sh"]
