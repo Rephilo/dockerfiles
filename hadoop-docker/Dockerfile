@@ -7,28 +7,35 @@ ENV RESOURCEMANAGER=resourcemanager
 
 #创建文件夹
 RUN mkdir -p /opt/hadoop
-#RUN mkdir -p /opt/servers
 
 #安装一些用到的包
 RUN apt update -y
-RUN apt install openjdk-8-jre -y
+RUN apt install ssh openjdk-8-jre -y
 
 #配置环境变量
+ENV HADOOP_VERSION=3.3.1
 ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk-arm64/
 ENV JRE_HOME $JAVA_HOME/jre
 ENV CLASSPATH ${JAVA_HOME}/lib:${JRE_HOME}/lib
 ENV PATH ${PATH}:${JAVA_HOME}/bin
 ENV HADOOP_HOME /opt/hadoop
 ENV PATH ${PATH}:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
+ENV PDSH_RCMD_TYPE ssh
 
 WORKDIR $HADOOP_HOME
 
 #下载Hadoop
 RUN apt install wget -y
 
-RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.1/hadoop-3.3.1-aarch64.tar.gz && \
-    tar -zxf hadoop-3.3.1-aarch64.tar.gz -C $HADOOP_HOME && \
-    rm hadoop-3.3.1-aarch64.tar.gz
+RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}-aarch64.tar.gz && \
+    tar -zxf hadoop-${HADOOP_VERSION}-aarch64.tar.gz -C $HADOOP_HOME && \
+    rm hadoop-${HADOOP_VERSION}-aarch64.tar.gz
+
+#启动ssh
+RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
+    chmod 0600 ~/.ssh/authorized_keys && \
+    echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
 
 #HDFS集群配置
 #配置hadoop-env.sh文件的JDK
@@ -62,5 +69,5 @@ RUN sed -i "/<configuration>/i<property><name>yarn.nodemanager.aux-services</nam
 #修改用户组
 RUN chown -R root:root /opt/hadoop
 
-EXPOSE 9000
+EXPOSE 9000 8088 9870
 ENTRYPOINT ["bin/docker-startup.sh"]
